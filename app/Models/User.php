@@ -9,12 +9,14 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Spatie\Permission\Traits\HasRoles;
+use App\Models\Asiento;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, TwoFactorAuthenticatable;
-    use HasRoles;
+    use HasRoles, HasApiTokens;
 
     /**
      * The attributes that are mass assignable.
@@ -65,5 +67,14 @@ class User extends Authenticatable
             ->take(2)
             ->map(fn ($word) => Str::substr($word, 0, 1))
             ->implode('');
+    }
+
+    /**
+     * Relación: Un usuario tiene muchos asientos contables
+     */
+    public function asientos()
+    {
+        // Usamos 'usuario_id' porque así se llama la columna en su tabla 'asientos'
+        return $this->hasMany(Asiento::class, 'usuario_id');
     }
 }
