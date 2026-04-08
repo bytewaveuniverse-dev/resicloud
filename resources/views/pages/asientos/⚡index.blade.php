@@ -310,7 +310,7 @@ new class extends Component
                     </div>
                     <div class="grid grid-cols-2 gap-4">
                         <flux:select wire:model="tipo" label="Tipo">
-                            <option value="sistema">Sistema</option>
+                            <option value="sistema">Sistema (mensualidad)</option>
                             <option value="suscripcion">Suscripción</option>
                             <option value="especial">Especial</option>
                             <option value="egreso">Egreso</option>
@@ -325,6 +325,7 @@ new class extends Component
                             <option value="por_validar">Por Validar</option>
                             <option value="pagado">Pagado</option>
                             <option value="moroso">Moroso</option>
+                            <option value="rechazado">Rechazado</option>
                         </flux:select>
                     </div>
                 </div>

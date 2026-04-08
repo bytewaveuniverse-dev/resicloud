@@ -136,7 +136,7 @@ class PagoController extends Controller
         $resumen = $asientos->map(function ($asiento) use ($user) {
             $item = [
                 'id'         => $asiento->id,
-                'concepto'   => $asiento->concepto,
+                'concepto'   => $asiento->descripcion,
                 'monto_usd'  => (float) $asiento->monto_dolares,
                 'monto_bs'   => (float) $asiento->monto_bs,
                 'estado'     => $asiento->estado,
