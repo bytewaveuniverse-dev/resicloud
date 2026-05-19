@@ -9,7 +9,6 @@ use App\Models\Asiento;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\DB; // Añadido para asegurar transacciones seguras
 use Livewire\Attributes\Layout;
 
 new #[Layout('layouts.app')] class extends Component
@@ -31,15 +30,16 @@ new #[Layout('layouts.app')] class extends Component
     public ?string $existenteCapture = null;
 
     // UI y Filtros
-    public string $search = ''; 
+    public string $search = ''; // Buscador integrado
     public bool $showModal = false;
     public bool $editMode = false;
     
-    // Buscador de usuarios
+    // Buscador de usuarios (Dentro del modal de creación)
     public string $searchUsuario = '';
     public $usuariosFiltrados = [];
     public string $nombreUsuarioSeleccionado = '';
 
+    // Resetear paginación cuando cambie la búsqueda
     public function updatedSearch()
     {
         $this->resetPage();
@@ -49,10 +49,12 @@ new #[Layout('layouts.app')] class extends Component
     {
         $query = Asiento::with('usuario')->orderBy('id', 'desc');
 
+        // Filtro de Seguridad: Si no es admin, solo ve lo suyo
         if (Auth::user()->tipo_usuario !== 'administrador') {
             $query->where('usuario_id', Auth::id());
         }
 
+        // Lógica de búsqueda integrada
         if ($this->search) {
             $query->where(function($q) {
                 $q->where('descripcion', 'like', '%' . $this->search . '%')
@@ -69,6 +71,7 @@ new #[Layout('layouts.app')] class extends Component
         ];
     }
 
+    // Lógica del Buscador de Usuarios en Modal
     public function updatedSearchUsuario($value) {
         if (strlen($value) > 1) {
             $this->usuariosFiltrados = User::where('name', 'like', "%$value%")->take(5)->get();
@@ -91,6 +94,7 @@ new #[Layout('layouts.app')] class extends Component
         if ($id) {
             $asiento = Asiento::with('usuario')->findOrFail($id);
 
+            // Capa de seguridad
             if (Auth::user()->tipo_usuario !== 'administrador' && $asiento->estado === 'pagado') {
                 return; 
             }
@@ -117,67 +121,44 @@ new #[Layout('layouts.app')] class extends Component
     public function save()
     {
         $user = Auth::user();
+        $asiento = Asiento::find($this->asiento_id);
 
         if ($user->tipo_usuario === 'administrador') {
-            // MEJORADO: 'usuario_id' ahora es nullable para permitir la asignación masiva
             $data = $this->validate([
-                'usuario_id'    => 'nullable|integer', 
+                'usuario_id' => 'required',
                 'monto_dolares' => 'required|numeric',
-                'descripcion'   => 'required|string',
-                'tipo'          => 'required|string',
-                'estado'        => 'required|string',
-                'fecha'         => 'nullable|date',
-                'monto_bs'      => 'nullable|numeric',
-                'referencia'    => 'nullable|string',
-                'fecha_pago'    => 'nullable|date',
+                'descripcion' => 'required',
+                'tipo' => 'required',
+                'estado' => 'required',
+                'fecha' => 'nullable',
+                'monto_bs' => 'nullable|numeric',
+                'referencia' => 'nullable',
+                'fecha_pago' => 'nullable',
             ]);
             
             if ($this->capture) {
                 $data['capture'] = $this->capture->store('captures', 'public');
             }
 
-            if ($this->editMode) { 
-                // Si estamos editando, solo actualizamos este asiento individual
-                $asiento = Asiento::findOrFail($this->asiento_id);
-                $asiento->update($data); 
-            } else { 
-                // MEJORADO: Lógica de creación masiva o individual
-                if (empty($this->usuario_id)) {
-                    // Si no se seleccionó usuario, se ejecuta de manera masiva en una transacción segura
-                    DB::transaction(function () use ($data) {
-                        // Buscamos solo a los usuarios que NO sean administradores (opcional, ajusta según tu negocio)
-                        $usuarios = User::where('tipo_usuario', '!=', 'administrador')->get();
-
-                        foreach ($usuarios as $u) {
-                            $data['usuario_id'] = $u->id; // Asignamos el ID de cada usuario en el bucle
-                            Asiento::create($data);
-                        }
-                    });
-                } else {
-                    // Si hay un usuario seleccionado, se crea normal para ese único usuario
-                    Asiento::create($data);
-                }
-            }
+            if ($this->editMode) { $asiento->update($data); } 
+            else { Asiento::create($data); }
 
         } else {
-            // Lógica para usuarios normales (Clientes/Residentes)
             $this->validate([
-                'monto_bs'   => 'required|numeric',
+                'monto_bs' => 'required|numeric',
                 'referencia' => 'required',
-                'fecha_pago' => 'required|date',
-                'capture'    => 'required|image|max:2048',
+                'fecha_pago' => 'required',
+                'capture' => 'required|image|max:2048',
             ]);
 
-            $asiento = Asiento::findOrFail($this->asiento_id);
             $asiento->update([
-                'monto_bs'   => $this->monto_bs,
+                'monto_bs' => $this->monto_bs,
                 'referencia' => $this->referencia,
                 'fecha_pago' => $this->fecha_pago,
-                'capture'    => $this->capture->store('captures', 'public'),
-                'estado'     => 'por_validar',
+                'capture' => $this->capture->store('captures', 'public'),
+                'estado' => 'por_validar',
             ]);
         }
-        
         $this->closeModal();
     }
 
