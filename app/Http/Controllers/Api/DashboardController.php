@@ -26,13 +26,18 @@ class DashboardController extends Controller
             'datos_numericos' => []
         ];
 
+        // Obtenemos el array una sola vez para optimizar las consultas
+        $balance = Asiento::balanceNeto();
+
         if ($esAdmin) {
             // --- DATOS NUMÉRICOS PARA ADMINISTRADOR (GLOBALES) ---
             $data['datos_numericos'] = [
                 'ingresos_globales'  => (float) Asiento::totalIngresosReales()->total_usd,
                 'egresos_condominio' => (float) (Asiento::totalEgresos()->total_usd ?? 0),
                 'total_por_cobrar'   => (float) Asiento::totalPorCobrarGlobal(),
-                'balance_en_caja'    => (float) Asiento::balanceNeto(),
+               // 'balance_en_caja'    => (float) Asiento::balanceNeto(),
+               'balance_en_caja'    => (float) ($balance['usd'] ?? 0),
+               'balance_en_caja_bs' => (float) ($balance['bs'] ?? 0),
                 'variacion_ingresos' => (float) Asiento::variacionMensualIngresos(),
                 'pagos_por_validar'  => (int) Asiento::where('estado', 'por_validar')->count(),
                 'top_morosos'        => Asiento::topMorosos()->map(fn($m) => [
@@ -47,13 +52,16 @@ class DashboardController extends Controller
 
             $data['datos_numericos'] = [
                 'total_ingresos_globales' => (float) Asiento::totalIngresosGlobales(),
-                'balance_en_caja' => (float) Asiento::balanceNeto(),
+                //'balance_en_caja' => (float) Asiento::balanceNeto(),
+                'balance_en_caja'    => (float) ($balance['usd'] ?? 0),
+                'balance_en_caja_bs' => (float) ($balance['bs'] ?? 0),
                 'mis_pagos_totales'   => (float) $user->asientos()->where('estado', 'pagado')->sum('monto_dolares'),
                 'mi_deuda_pendiente'  => (float) Asiento::miDeudaPendiente(),
                 'egresos_condominio'  => (float) (Asiento::totalEgresos()->total_usd ?? 0), // Referencia para el vecino
                 'estatus_solvencia'   => (float) $solvencia['monto'], 
                 'ultimo_pago_monto'   => $ultimoPago ? (float) $ultimoPago->monto_dolares : 0,
-                'ultimo_pago_fecha'   => $ultimoPago ? $ultimoPago->fecha_pago : null,
+                // AQUÍ ESTÁ EL CAMBIO SENIOR:
+                'ultimo_pago_fecha'   => $ultimoPago ? \Carbon\Carbon::parse($ultimoPago->fecha_pago)->format('Y-m-d') : null,
                 'variacion_ingresos_global' => (float) Asiento::variacionMensualIngresos()
             ];
         }

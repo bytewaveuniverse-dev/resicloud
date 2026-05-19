@@ -49,16 +49,9 @@
                     </div>
                     <div class="flex flex-col">
                         <flux:text weight="medium" class="text-zinc-500">Balance en Caja</flux:text>
-                        
-                        @php $balanceAnalista = \App\Models\Asiento::balanceNeto(); @endphp
-                        <span class="text-2xl font-bold text-zinc-900 dark:text-white counter" data-target="{{ $balanceAnalista['usd'] }}">
+                        <span class="text-2xl font-bold text-zinc-900 dark:text-white counter" data-target="{{ \App\Models\Asiento::balanceNeto() }}">
                             $0.00
                         </span>
-                        {{-- Opcional: Si quieres mostrar también los Bs al Analista --}}
-                        <span class="text-xs font-medium text-zinc-500 counter-bs" data-target="{{ $balanceAnalista['bs'] }}">
-                            Bs. 0.00
-                        </span>
-                        
                         <span class="text-xs text-zinc-400 font-medium">Disponible Real</span>
                     </div>
                 </div>

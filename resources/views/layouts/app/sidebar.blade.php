@@ -26,6 +26,15 @@
                     </flux:sidebar.item>
                 </flux:sidebar.group>
             </flux:sidebar.nav>
+
+             <!-- Colocar el menu para el modulo de reportes de asientos -->
+            <flux:sidebar.nav>
+                <flux:sidebar.group class="grid">
+                    <flux:sidebar.item icon="document-text" :href="route('reportes.menu')" :current="request()->routeIs('reportes.menu')" wire:navigate>
+                        {{ __('Reportes') }}
+                    </flux:sidebar.item>
+                </flux:sidebar.group>
+            </flux:sidebar.nav>
             
 
             <!-- Colocar el menu para el modulo usuarios -->

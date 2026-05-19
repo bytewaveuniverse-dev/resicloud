@@ -90,13 +90,35 @@ class Asiento extends Model
     /**
      * BALANCE NETO: Ingresos Reales Globales - Egresos
      */
-    public static function balanceNeto() {
+    /*public static function balanceNeto() {
         $ingresos = static::whereIn('tipo', ['sistema', 'especial'])
             ->where('estado', 'pagado')
             ->sum('monto_dolares');
         
         $egresos = self::totalEgresos()->total_usd ?? 0;
         return $ingresos - $egresos;
+    }
+    */
+
+    /**
+     * BALANCE NETO GLOBAL: (Ingresos Reales - Egresos) en USD y BS
+     */
+    public static function balanceNeto() {
+        // Suma de Ingresos Reales (Pagados)
+        $ingresos = static::whereIn('tipo', ['sistema', 'especial'])
+            ->where('estado', 'pagado')
+            ->selectRaw('SUM(monto_dolares) as usd, SUM(monto_bs) as bs')
+            ->first();
+        
+        // Suma de Egresos
+        $egresos = static::where('tipo', 'egreso')
+            ->selectRaw('SUM(monto_dolares) as usd, SUM(monto_bs) as bs')
+            ->first();
+
+        return [
+            'usd' => ($ingresos->usd ?? 0) - ($egresos->usd ?? 0),
+            'bs'  => ($ingresos->bs ?? 0) - ($egresos->bs ?? 0)
+        ];
     }
 
     // --- Métodos para Gráficas y Reportes ---
@@ -236,6 +258,32 @@ class Asiento extends Model
         return static::where('usuario_id', auth()->id())
             ->whereIn('estado', ['pendiente', 'moroso', 'por_validar'])
             ->sum('monto_dolares');
+    }
+
+    /**
+     * Scope para filtrar reportes de forma dinámica
+     */
+    // En App\Models\Asiento.php
+
+    public function scopeReporte($query, $usuarioNombre = null, $estado = null, $tipo = null, $fechaInicio = null, $fechaFin = null)
+    {
+        return $query->with('usuario')
+            ->when($usuarioNombre, function ($q) use ($usuarioNombre) {
+                $q->whereHas('usuario', function ($relacion) use ($usuarioNombre) {
+                    $relacion->where('name', 'like', '%' . $usuarioNombre . '%');
+                });
+            })
+            ->when($estado, function ($q) use ($estado) {
+                $q->where('estado', $estado);
+            })
+            ->when($tipo, function ($q) use ($tipo) {
+                $q->where('tipo', $tipo);
+            })
+            // Nuevo filtro de rango de fechas
+            ->when($fechaInicio && $fechaFin, function ($q) use ($fechaInicio, $fechaFin) {
+                $q->whereBetween('fecha', [$fechaInicio, $fechaFin]);
+            })
+            ->orderBy('fecha', 'desc');
     }
 
 }

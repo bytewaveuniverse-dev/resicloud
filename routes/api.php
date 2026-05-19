@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\PagoController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
 
 // 1. RUTA PÚBLICA (Sin token)
 Route::post('/v1/login', [AuthController::class, 'login']);
@@ -25,4 +26,45 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
 
     //Mostrar todos los asientos
     Route::get('/pagos/asientos', [PagoController::class, 'asientos']);
+
+    Route::get('/admin/asientos/{id}', [PagoController::class, 'getDetalleAsiento']);
+
+    //seria algo asi
+
+        Route::post('/user/update-token', function (Request $request) {
+            // Validamos que el token venga en la petición
+            $request->validate([
+                'fcm_token' => 'required|string',
+            ]);
+
+            // Actualizamos el token del usuario autenticado
+            $request->user()->update([
+                'fcm_token' => $request->fcm_token
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Token de notificaciones actualizado'
+            ]);
+        });
+    //fin de este espacio
 });
+
+
+/*
+Route::middleware('auth:sanctum')->post('/user/update-token', function (Request $request) {
+    // Validamos que el token venga en la petición
+    $request->validate([
+        'fcm_token' => 'required|string',
+    ]);
+
+    // Actualizamos el token del usuario autenticado
+    $request->user()->update([
+        'fcm_token' => $request->fcm_token
+    ]);
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Token de notificaciones actualizado'
+    ]);
+});*/

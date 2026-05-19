@@ -30,6 +30,7 @@ class User extends Authenticatable
         'telefono',
         'tipo_usuario',
         'estado_cuenta',
+        'fcm_token',
     ];
 
     /**
