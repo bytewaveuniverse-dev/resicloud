@@ -1,6 +1,6 @@
 <x-layouts::app :title="__('Reportes Administrativos')">
     <div class="flex h-full w-full flex-1 flex-col gap-6 p-6">
-        
+
         <div class="flex justify-between items-center mb-2">
             <flux:heading size="xl">
                 Módulo de Reportes PDF
@@ -18,16 +18,16 @@
                 <form action="{{ route('reportes.generar') }}" method="GET" class="p-8 space-y-6">
                     <div>
                         <flux:label>Nombre del Vecino</flux:label>
-                        <flux:input 
-                            type="text" 
-                            name="nombre" 
-                            placeholder="Dejar en blanco para todos..." 
+                        <flux:input
+                            type="text"
+                            name="nombre"
+                            placeholder="Dejar en blanco para todos..."
                             icon="user"
                         />
                     </div>
 
                     {{-- NUEVO FILTRO DE TIPO --}}
-                   
+
                     <div>
                         <flux:label>Tipo</flux:label>
                         {{-- Cambiamos wire:model por name="tipo" --}}
@@ -37,6 +37,7 @@
                             <option value="suscripcion">Suscripción</option>
                             <option value="especial">Especial</option>
                             <option value="egreso">Egreso</option>
+                            <option value="usuarios">Usuarios</option>
                         </flux:select>
                     </div>
 
@@ -51,7 +52,7 @@
                         </flux:select>
                     </div>
 
-                    
+
                     <div>
                         <flux:label>Desde</flux:label>
                         <flux:input type="date" name="fecha_inicio" />
@@ -72,7 +73,7 @@
 
                 </form>
             </div>
-            
+
             <div class="mt-6 text-center">
                 <flux:text size="xs" class="text-zinc-500 italic">
                     El archivo se generará en formato PDF estándar para impresión.

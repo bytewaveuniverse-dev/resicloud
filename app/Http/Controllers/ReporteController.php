@@ -3,6 +3,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Asiento;
+use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class ReporteController extends Controller
@@ -26,12 +27,12 @@ class ReporteController extends Controller
 
         // Pasamos los 4 parámetros al scope
         $asientos = Asiento::reporte($nombre, $estado, $f_inicio, $f_fin)->get();
-        
+
         $totalUsd = $asientos->sum('monto_dolares');
 
         // Enviamos las fechas a la vista del PDF para que aparezcan en el encabezado
         $pdf = Pdf::loadView('reportes.pdf', compact('asientos', 'nombre', 'estado', 'totalUsd', 'f_inicio', 'f_fin'));
-        
+
         return $pdf->download('reporte_resicloud_' . date('d_m_Y') . '.pdf');
     }
     */
@@ -47,7 +48,7 @@ class ReporteController extends Controller
 
         // 2. Consulta a la base de datos usando el ScopeReporte
         $asientos = Asiento::reporte($nombre, $estado, $f_inicio, $f_fin)->get();
-        
+
         // 3. Agrupamos los registros por el nombre del vecino
         $asientosAgrupados = $asientos->groupBy(function($item) {
             return $item->usuario->name;
@@ -58,11 +59,11 @@ class ReporteController extends Controller
 
         // 5. Carga de la vista PDF con todos los datos necesarios
         $pdf = Pdf::loadView('reportes.pdf', compact(
-            'asientosAgrupados', 
-            'nombre', 
-            'estado', 
-            'totalUsd', 
-            'f_inicio', 
+            'asientosAgrupados',
+            'nombre',
+            'estado',
+            'totalUsd',
+            'f_inicio',
             'f_fin'
         ));
 
@@ -80,10 +81,21 @@ class ReporteController extends Controller
         $f_inicio = $request->get('fecha_inicio');
         $f_fin = $request->get('fecha_fin');
 
+        if($tipo === 'usuarios'){
+        // Optimizamos la consulta trayendo solo los campos necesarios
+        $usuarios = User::select('name', 'email')->orderBy('name', 'asc')->get();
+
+        // Generamos el PDF apuntando a tu nueva vista (ej. resources/views/reportes/accesos.blade.php)
+        $pdf = Pdf::loadView('reportes.usuariospdf', compact('usuarios'));
+
+        // Retornamos el PDF para que se muestre en el navegador
+        return $pdf->stream('reporte_accesos_resicloud.pdf');
+        }
+
         // 2. IMPORTANTE: El orden debe coincidir con el Scope del Modelo
         // Según tu modelo, el orden es: $usuarioNombre, $estado, $tipo, $fechaInicio, $fechaFin
         $asientos = Asiento::reporte($nombre, $estado, $tipo, $f_inicio, $f_fin)->get();
-        
+
         // 3. Agrupamos (Añadimos una validación por si es Egreso y no tiene usuario)
         $asientosAgrupados = $asientos->groupBy(function($item) {
             return $item->usuario->name ?? 'ADMINISTRACIÓN / EGRESOS';
@@ -92,12 +104,12 @@ class ReporteController extends Controller
         $totalUsd = $asientos->sum('monto_dolares');
 
         $pdf = Pdf::loadView('reportes.pdf', compact(
-            'asientosAgrupados', 
-            'nombre', 
-            'estado', 
+            'asientosAgrupados',
+            'nombre',
+            'estado',
             'tipo', // <--- PASAR A LA VISTA
-            'totalUsd', 
-            'f_inicio', 
+            'totalUsd',
+            'f_inicio',
             'f_fin'
         ));
 
